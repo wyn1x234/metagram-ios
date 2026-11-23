@@ -46,6 +46,21 @@ def write(path, text):
         f.write(text)
 
 
+def refresh_profiles(root):
+    profiles = root / "build-system" / "fake-codesigning" / "profiles"
+    if not profiles.is_dir():
+        return 0
+    changed = 0
+    for path in sorted(profiles.glob("*.mobileprovision")):
+        text = path.read_bytes().decode("utf-8", "surrogateescape")
+        # Same length keeps the CMS envelope around the plist intact; plisttool only reads the plist.
+        updated = re.sub(r"(<key>ExpirationDate</key>\s*<date>)\d{4}", r"\g<1>2046", text)
+        if updated != text:
+            path.write_bytes(updated.encode("utf-8", "surrogateescape"))
+            changed += 1
+    return changed
+
+
 def main():
     if len(sys.argv) != 2:
         raise SystemExit("usage: apply_metagram.py Telegram-iOS")
@@ -237,6 +252,7 @@ public func markMessagesKeptAfterRemoteDelete(transaction: Transaction, ids: [Me
             write(strings, updated)
             renamed += 1
     print("display-name", renamed)
+    print("profile-dates", refresh_profiles(root))
 
 
 if __name__ == "__main__":
