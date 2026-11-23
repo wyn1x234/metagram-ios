@@ -42,7 +42,8 @@ def replace_text(text, old, new, label):
 
 
 def write(path, text):
-    path.write_text(text, encoding="utf-8", newline="\n")
+    with open(path, "w", encoding="utf-8", newline="\n") as f:
+        f.write(text)
 
 
 def main():
